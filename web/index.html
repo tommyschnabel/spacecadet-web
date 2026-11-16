@@ -6,8 +6,10 @@
 <title>3D Pinball Space Cadet</title>
 <style>
   html, body { margin: 0; height: 100%; background: #000; color: #ccc; font-family: sans-serif; }
-  body { display: flex; align-items: center; justify-content: center; }
-  canvas { display: block; outline: none; image-rendering: pixelated; }
+  body { overflow: hidden; }
+  /* Canvas fills the window; SDL picks up the CSS size and the game scales the
+     table uniformly (Options > Graphics > Uniform Scaling) inside it. */
+  canvas { display: block; width: 100vw; height: 100vh; outline: none; image-rendering: pixelated; }
   #status { position: fixed; top: 50%; left: 0; right: 0; text-align: center; white-space: pre-line; }
 </style>
 </head>
@@ -76,6 +78,8 @@
       })().catch((e) => setStatus('Error: ' + e.message));
     }],
   };
+  // SDL only resizes on a window resize event; fire one once the game is up.
+  Module.postRun = [() => setTimeout(() => window.dispatchEvent(new Event('resize')), 0)];
   window.addEventListener('pagehide', () => { try { Module.persistFs(); } catch (e) {} });
   window.addEventListener('mousedown', () => Module.canvas.focus());
 </script>

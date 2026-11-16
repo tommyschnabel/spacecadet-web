@@ -65,6 +65,19 @@ diff -ruN scp-a/SpaceCadetPinball/midi.cpp scp-b/SpaceCadetPinball/midi.cpp
  	if (!audio)
  		audio = load_track_sub(fileName, false);
  
+diff -ruN scp-a/SpaceCadetPinball/options.cpp scp-b/SpaceCadetPinball/options.cpp
+--- scp-a/SpaceCadetPinball/options.cpp	2026-11-16 10:18:36
++++ scp-b/SpaceCadetPinball/options.cpp	2026-11-16 11:00:37
+@@ -73,8 +73,8 @@
+ 		{
+ 			"Toggle Pause",
+ 			Msg::Menu1_Pause_Resume_Game,
++			{InputTypes::Keyboard, SDLK_RETURN},
+ 			{InputTypes::Keyboard, SDLK_F3},
+-			{},
+ 			{InputTypes::GameController, SDL_CONTROLLER_BUTTON_START}
+ 		},
+ 		{
 diff -ruN scp-a/SpaceCadetPinball/pch.h scp-b/SpaceCadetPinball/pch.h
 --- scp-a/SpaceCadetPinball/pch.h	2026-11-16 10:18:36
 +++ scp-b/SpaceCadetPinball/pch.h	2026-11-16 10:33:53
@@ -79,9 +92,67 @@ diff -ruN scp-a/SpaceCadetPinball/pch.h scp-b/SpaceCadetPinball/pch.h
  	MIX_INIT_MID;
  #else
  	MIX_INIT_FLUIDSYNTH;
+diff -ruN scp-a/SpaceCadetPinball/translations.cpp scp-b/SpaceCadetPinball/translations.cpp
+--- scp-a/SpaceCadetPinball/translations.cpp	2026-11-16 10:18:36
++++ scp-b/SpaceCadetPinball/translations.cpp	2026-11-16 11:03:51
+@@ -737,30 +737,30 @@
+ 	{
+ 		Msg::STRING123,
+ 		{
+-			{ Lang::Arabic, "Game Paused\nF3 to Resume" },
+-			{ Lang::Czech, "Hra pozastavena. Pokračujte klávesou F3." },
+-			{ Lang::Danish, "Spillet afbrudt\ntryk på F3 for at fortsætte" },
+-			{ Lang::German, "Spiel angehalten\nWeiter mit F3." },
+-			{ Lang::Greek, "Η παρτίδα διακόπηκε\nF3 για συνέχιση" },
+-			{ Lang::English, "Game Paused\nF3 to Resume" },
+-			{ Lang::Spanish, "Juego pausado\nF3 para reanudar" },
+-			{ Lang::Finnish, "Peli keskeytetty\nPaina F3" },
+-			{ Lang::French, "Partie suspendue\nF3=Reprise" },
+-			{ Lang::Hebrew, "Game Paused\nF3 to Resume" },
+-			{ Lang::Hungarian, "Felfüggesztve\nF3 - folytatás" },
+-			{ Lang::Italian, "Partita interrotta\nF3 per riprendere" },
+-			{ Lang::Japanese, "ゲーム一時停止中\nF3 キーで再開" },
+-			{ Lang::Korean, "게임 일시 중지됨\n계속하려면 <F3> 키" },
+-			{ Lang::Norwegian, "Pause\nF3 for å fortsette" },
+-			{ Lang::Dutch, "Spel is onderbroken\nF3 hervat het spel" },
+-			{ Lang::Polish, "Gra wstrzymana.\nF3 wznawia grę." },
+-			{ Lang::BrazilianPortuguese, "Jogo em pausa\nF3 para continuar" },
+-			{ Lang::Portuguese, "Jogo suspenso\nF3 para continuar" },
+-			{ Lang::Russian, "Игра приостановлена\nНажмите F3, чтобы продолжить" },
+-			{ Lang::Swedish, "Paus\nF3=Fortsätt" },
+-			{ Lang::Turkish, "Oyun Duraklatıldı\nDevam Etmek için F3'e basın" },
+-			{ Lang::SimplifiedChinese, "游戏暂停\nF3 继续" },
+-			{ Lang::TraditionalChinese, "遊戲暫停\n按 F3 恢復" },
++			{ Lang::Arabic, "Game Paused\nEnter to Resume" },
++			{ Lang::Czech, "Hra pozastavena. Pokračujte klávesou Enter." },
++			{ Lang::Danish, "Spillet afbrudt\ntryk på Enter for at fortsætte" },
++			{ Lang::German, "Spiel angehalten\nWeiter mit Enter." },
++			{ Lang::Greek, "Η παρτίδα διακόπηκε\nEnter για συνέχιση" },
++			{ Lang::English, "Game Paused\nPress Enter" },
++			{ Lang::Spanish, "Juego pausado\nEnter para reanudar" },
++			{ Lang::Finnish, "Peli keskeytetty\nPaina Enter" },
++			{ Lang::French, "Partie suspendue\nEnter=Reprise" },
++			{ Lang::Hebrew, "Game Paused\nEnter to Resume" },
++			{ Lang::Hungarian, "Felfüggesztve\nEnter - folytatás" },
++			{ Lang::Italian, "Partita interrotta\nEnter per riprendere" },
++			{ Lang::Japanese, "ゲーム一時停止中\nEnter キーで再開" },
++			{ Lang::Korean, "게임 일시 중지됨\n계속하려면 <Enter> 키" },
++			{ Lang::Norwegian, "Pause\nEnter for å fortsette" },
++			{ Lang::Dutch, "Spel is onderbroken\nEnter hervat het spel" },
++			{ Lang::Polish, "Gra wstrzymana.\nEnter wznawia grę." },
++			{ Lang::BrazilianPortuguese, "Jogo em pausa\nEnter para continuar" },
++			{ Lang::Portuguese, "Jogo suspenso\nEnter para continuar" },
++			{ Lang::Russian, "Игра приостановлена\nНажмите Enter, чтобы продолжить" },
++			{ Lang::Swedish, "Paus\nEnter=Fortsätt" },
++			{ Lang::Turkish, "Oyun Duraklatıldı\nDevam Etmek için Enter'e basın" },
++			{ Lang::SimplifiedChinese, "游戏暂停\nEnter 继续" },
++			{ Lang::TraditionalChinese, "遊戲暫停\n按 Enter 恢復" },
+ 		},
+ 	},
+ 	{
 diff -ruN scp-a/SpaceCadetPinball/winmain.cpp scp-b/SpaceCadetPinball/winmain.cpp
 --- scp-a/SpaceCadetPinball/winmain.cpp	2026-11-16 10:18:36
-+++ scp-b/SpaceCadetPinball/winmain.cpp	2026-11-16 10:18:51
++++ scp-b/SpaceCadetPinball/winmain.cpp	2026-11-16 11:00:37
 @@ -11,7 +11,12 @@
  #include "Sound.h"
  #include "translations.h"
@@ -95,7 +166,20 @@ diff -ruN scp-a/SpaceCadetPinball/winmain.cpp scp-b/SpaceCadetPinball/winmain.cp
  constexpr const char* winmain::Version;
  
  SDL_Window* winmain::MainWindow = nullptr;
-@@ -322,6 +327,26 @@
+@@ -250,7 +255,12 @@
+ 			Options.FullScreen = true;
+ 		}
+ 
++#ifdef __EMSCRIPTEN__
++		// Browser port: the canvas fills the page (CSS), SDL follows its size.
++		if (false)
++#else
+ 		if (!Options.FullScreen)
++#endif
+ 		{
+ 			auto resInfo = &fullscrn::resolution_array[fullscrn::GetResolution()];
+ 			SDL_SetWindowSize(MainWindow, resInfo->TableWidth, resInfo->TableHeight);
+@@ -322,6 +332,26 @@
  		if (!ProcessWindowMessages() || bQuit)
  			break;
  
@@ -122,7 +206,7 @@ diff -ruN scp-a/SpaceCadetPinball/winmain.cpp scp-b/SpaceCadetPinball/winmain.cp
  		if (has_focus)
  		{
  			if (mouse_down)
-@@ -422,6 +447,13 @@
+@@ -422,6 +452,13 @@
  			auto targetTimeDelta = TargetFrameTime - DurationMs(updateEnd - frameStart) - sleepRemainder;
  
  			TimePoint frameEnd;
@@ -136,7 +220,7 @@ diff -ruN scp-a/SpaceCadetPinball/winmain.cpp scp-b/SpaceCadetPinball/winmain.cp
  			if (targetTimeDelta > DurationMs::zero() && !Options.UncappedUpdatesPerSecond)
  			{
  				if (Options.HybridSleep)
-@@ -434,6 +466,7 @@
+@@ -434,6 +471,7 @@
  			{
  				frameEnd = updateEnd;
  			}
