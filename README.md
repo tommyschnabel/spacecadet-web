@@ -15,7 +15,8 @@ and loads it into the in-memory filesystem before the game starts.
 
 ## Run
 
-Mount the directory holding the game files at `/data` (read-only is fine).
+Mount the directory holding the game files at `/data` (read-only is fine), and a
+writable directory at `/scores` for the shared high score table.
 Files can sit at the top level or in subfolders; filenames are matched
 case-insensitively. Everything in it is downloaded by every visitor, so leave out
 extras like `pinball.exe` or `table.bmp`.
@@ -26,6 +27,7 @@ extras like `pinball.exe` or `table.bmp`.
 docker run -d --name spacecadet --restart unless-stopped \
   -p 8080:80 \
   -v /path/to/Pinball:/data:ro \
+  -v /path/to/scores:/scores \
   ghcr.io/tommyschnabel/spacecadet-web:latest
 # http://localhost:8080
 ```
@@ -42,12 +44,25 @@ services:
       - "8080:80"
     volumes:
       - /path/to/Pinball:/data:ro
+      - /path/to/scores:/scores
 ```
 
 To build from source instead, the repo's `docker-compose.yml` builds the image
 and mounts `./gamedata`: `docker compose up -d --build`.
 
-Settings and high scores persist per-browser in IndexedDB.
+Settings persist per-browser in IndexedDB.
+
+## High scores
+
+The high score table is shared by everyone playing on the server. nginx's
+built-in njs module (`scores.js`) serves it at `/api/scores`: `GET` returns the
+top 5, `POST {"name", "score"}` adds an entry. It's stored as
+`/scores/scores.json`. The game loads it at startup, re-checks it before every
+high score prompt, and submits new entries. Clearing the table from the game is
+disabled; delete `scores.json` to reset it.
+
+Submissions are rate-limited per IP, but the score comes from the browser, so
+anyone who wants to can post a fake one.
 
 ## Controls
 
@@ -86,6 +101,9 @@ Full Tilt's `.MDS` tracks are not rendered.
 
 - CMake: use Emscripten's SDL2/SDL2_mixer ports, link with ASYNCIFY + IDBFS.
 - `midi.cpp` / `pch.h`: prefer the pre-rendered `.OGG` track; init Ogg instead of MIDI.
+- `high_score.cpp`: read/submit the shared table via `Module.serverScores` /
+  `Module.submitScore` (see `web/index.html`); no Clear button.
+- `options.cpp`: reset key bindings saved by older builds when the defaults change.
 - `options.cpp` / `translations.cpp`: letter shortcuts instead of F-keys (see Controls).
 - `winmain.cpp`: replace the blocking frame sleep with `emscripten_sleep` so the
   native main loop yields to the browser; flush high scores + sync IndexedDB every 5s;

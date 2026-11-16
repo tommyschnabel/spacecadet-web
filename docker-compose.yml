@@ -9,3 +9,5 @@ services:
     volumes:
       # Directory holding the original game files (PINBALL.DAT, *.WAV, PINBALL.MID, ...)
       - ./gamedata:/data:ro
+      # Shared high score table
+      - ./scores:/scores

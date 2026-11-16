@@ -27,9 +27,13 @@ RUN emcmake cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
 FROM nginx:1.27.3-alpine
 RUN apk add --no-cache fluidsynth soundfont-timgm vorbis-tools
 COPY render-music.sh /docker-entrypoint.d/40-render-music.sh
+COPY scores-dir.sh /docker-entrypoint.d/30-scores-dir.sh
+COPY scores.js /etc/nginx/njs/scores.js
+RUN sed -i '1i load_module modules/ngx_http_js_module.so;' /etc/nginx/nginx.conf
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY web/ /usr/share/nginx/html/
 COPY --from=build /src/bin/SpaceCadetPinball.js /src/bin/SpaceCadetPinball.wasm /usr/share/nginx/html/
-RUN mkdir -p /data
+RUN mkdir -p /data /scores
+VOLUME /scores
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://127.0.0.1/healthz || exit 1

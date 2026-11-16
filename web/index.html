@@ -43,6 +43,18 @@
     print: (t) => console.log(t),
     printErr: (t) => console.warn(t),
     persistFs: () => FS.syncfs(false, (err) => { if (err) console.warn('syncfs', err); }),
+    // Shared high score table, read by the game (high_score.cpp) whenever it
+    // ranks or shows scores. null until the first successful fetch.
+    serverScores: null,
+    submitScore: (name, score) => {
+      fetch('api/scores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, score }),
+      }).then((r) => r.ok ? r.json() : Promise.reject(r.status))
+        .then((t) => { Module.serverScores = t; })
+        .catch((e) => console.warn('score submit failed', e));
+    },
     preRun: [() => {
       // Persistent prefs/high scores (SDL_GetPrefPath -> /libsdl/...) in IndexedDB.
       FS.mkdir(PREF_ROOT);
@@ -52,6 +64,16 @@
         if (err) console.warn('idbfs load', err);
         removeRunDependency('idbfs');
       });
+
+      // Load the shared table before main() so the first read() uses it;
+      // keep it fresh while playing.
+      const refreshScores = () => fetch('api/scores', { cache: 'no-store' })
+        .then((r) => r.ok ? r.json() : Promise.reject(r.status))
+        .then((t) => { Module.serverScores = t; });
+      addRunDependency('scores');
+      refreshScores().catch((e) => console.warn('scores unavailable, using local table', e))
+        .finally(() => removeRunDependency('scores'));
+      setInterval(() => refreshScores().catch(() => {}), 60000);
 
       // Game data served from the mounted /data directory.
       FS.mkdir(GAME_DIR);

@@ -1,6 +1,6 @@
 diff -ruN scp-a/CMakeLists.txt scp-b/CMakeLists.txt
 --- scp-a/CMakeLists.txt	2026-11-16 10:18:36
-+++ scp-b/CMakeLists.txt	2026-11-16 10:18:59
++++ scp-b/CMakeLists.txt	2026-11-16 11:46:33
 @@ -32,8 +32,16 @@
  # SDL2main is not needed
  set(SDL2_BUILDING_LIBRARY ON)
@@ -30,7 +30,7 @@ diff -ruN scp-a/CMakeLists.txt scp-b/CMakeLists.txt
 +        -sALLOW_MEMORY_GROWTH=1
 +        -sINITIAL_MEMORY=134217728
 +        -sFORCE_FILESYSTEM=1
-+        -sEXPORTED_RUNTIME_METHODS=FS,IDBFS,addRunDependency,removeRunDependency
++        -sEXPORTED_RUNTIME_METHODS=FS,IDBFS,addRunDependency,removeRunDependency,stringToUTF8,UTF8ToString
 +        -sENVIRONMENT=web
 +        -lidbfs.js
 +    )
@@ -50,6 +50,100 @@ diff -ruN scp-a/SpaceCadetPinball/fullscrn.cpp scp-b/SpaceCadetPinball/fullscrn.
  	auto res = &resolution_array[resolution];
  	ScaleX = static_cast<float>(width) / res->TableWidth;
  	ScaleY = static_cast<float>(height) / res->TableHeight;
+diff -ruN scp-a/SpaceCadetPinball/high_score.cpp scp-b/SpaceCadetPinball/high_score.cpp
+--- scp-a/SpaceCadetPinball/high_score.cpp	2026-11-16 10:18:36
++++ scp-b/SpaceCadetPinball/high_score.cpp	2026-11-16 11:46:40
+@@ -6,6 +6,41 @@
+ #include "score.h"
+ #include "translations.h"
+ 
++#ifdef __EMSCRIPTEN__
++#include <emscripten.h>
++
++// Browser port: the high score table is shared and kept on the server.
++// The page keeps the latest copy in Module.serverScores (see web/index.html).
++EM_JS(int, js_has_server_scores, (), {
++	return Array.isArray(Module.serverScores) ? 1 : 0;
++});
++
++EM_JS(int, js_server_score, (int index, char* name, int nameSize), {
++	var s = Module.serverScores;
++	if (!Array.isArray(s) || index >= s.length) return -999;
++	stringToUTF8(String(s[index].name), name, nameSize);
++	return s[index].score | 0;
++});
++
++EM_JS(void, js_submit_score, (const char* name, int score), {
++	if (Module.submitScore) Module.submitScore(UTF8ToString(name), score);
++});
++
++// Replace the local table with the server's. False if the server copy isn't loaded.
++static bool sync_from_server()
++{
++	if (!js_has_server_scores())
++		return false;
++	for (int index = 0; index < 5; index++)
++	{
++		auto& entry = high_score::highscore_table[index];
++		entry.Name[0] = 0;
++		entry.Score = js_server_score(index, entry.Name, sizeof entry.Name);
++	}
++	return true;
++}
++#endif
++
+ bool high_score::dlg_enter_name;
+ bool high_score::ShowDialog = false;
+ high_score_entry high_score::DlgData;
+@@ -16,6 +51,10 @@
+ {
+ 	char Buffer[20];
+ 
++#ifdef __EMSCRIPTEN__
++	if (sync_from_server())
++		return 0;
++#endif
+ 	int checkSum = 0;
+ 	clear_table();
+ 	for (auto position = 0; position < 5; ++position)
+@@ -103,6 +142,9 @@
+ 
+ 		data.Entry.Name[31] = 0;
+ 		highscore_table[data.Position] = data.Entry;
++#ifdef __EMSCRIPTEN__
++		js_submit_score(data.Entry.Name, data.Entry.Score);
++#endif
+ 	}
+ }
+ 
+@@ -124,6 +166,10 @@
+ 		ShowDialog = false;
+ 		if (!ImGui::IsPopupOpen(pb::get_rc_string(Msg::HIGHSCORES_Caption)))
+ 		{
++#ifdef __EMSCRIPTEN__
++			// Rank against the freshest shared table.
++			sync_from_server();
++#endif
+ 			dlg_enter_name = false;
+ 			while (!ScoreQueue.empty())
+ 			{
+@@ -207,6 +253,8 @@
+ 		if (ImGui::Button(pb::get_rc_string(Msg::GenericCancel)))
+ 			ImGui::CloseCurrentPopup();
+ 
++#ifndef __EMSCRIPTEN__
++		// Browser port: the table is shared, so no clearing it from a client.
+ 		ImGui::SameLine();
+ 		if (ImGui::Button(pb::get_rc_string(Msg::HIGHSCORES_Clear)))
+ 			ImGui::OpenPopup("Confirm");
+@@ -226,6 +274,7 @@
+ 			}
+ 			ImGui::EndPopup();
+ 		}
++#endif
+ 
+ 		ImGui::EndPopup();
+ 
 diff -ruN scp-a/SpaceCadetPinball/midi.cpp scp-b/SpaceCadetPinball/midi.cpp
 --- scp-a/SpaceCadetPinball/midi.cpp	2026-11-16 10:18:36
 +++ scp-b/SpaceCadetPinball/midi.cpp	2026-11-16 10:31:36
@@ -79,7 +173,7 @@ diff -ruN scp-a/SpaceCadetPinball/midi.cpp scp-b/SpaceCadetPinball/midi.cpp
  
 diff -ruN scp-a/SpaceCadetPinball/options.cpp scp-b/SpaceCadetPinball/options.cpp
 --- scp-a/SpaceCadetPinball/options.cpp	2026-11-16 10:18:36
-+++ scp-b/SpaceCadetPinball/options.cpp	2026-11-16 11:10:56
++++ scp-b/SpaceCadetPinball/options.cpp	2026-11-16 11:49:16
 @@ -66,58 +66,59 @@
  		{
  			"New Game",
@@ -149,6 +243,30 @@ diff -ruN scp-a/SpaceCadetPinball/options.cpp scp-b/SpaceCadetPinball/options.cp
  		},
  	},
  	{"Sounds", true},
+@@ -174,6 +175,23 @@
+ 
+ 	for (const auto opt : AllOptions)
+ 		opt->Load();
++
++#ifdef __EMSCRIPTEN__
++	// Browser port: default key bindings change between builds (F-keys -> letters).
++	// Bindings saved by an older build would shadow the new defaults, so reset
++	// them once per bindings revision.
++	constexpr int BrowserBindingsVersion = 1;
++	if (get_int("Browser bindings version", 0) < BrowserBindingsVersion)
++	{
++		for (auto& control : Options.Key)
++		{
++			for (auto i = 0; i < 3; i++)
++				control.Inputs[i] = control.Defaults[i];
++			control.Save();
++		}
++		set_int("Browser bindings version", BrowserBindingsVersion);
++	}
++#endif
+ 	PostProcessOptions();
+ }
+ 
 diff -ruN scp-a/SpaceCadetPinball/pch.h scp-b/SpaceCadetPinball/pch.h
 --- scp-a/SpaceCadetPinball/pch.h	2026-11-16 10:18:36
 +++ scp-b/SpaceCadetPinball/pch.h	2026-11-16 10:33:53
