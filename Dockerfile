@@ -2,7 +2,9 @@
 # then serve it as static files. Game data (PINBALL.DAT etc.) is NOT included:
 # mount it at /data.
 
-FROM emscripten/emsdk:3.1.74 AS build
+# Output is wasm, so the build stage always runs natively; only the nginx
+# stage is per-platform.
+FROM --platform=$BUILDPLATFORM emscripten/emsdk:3.1.74 AS build
 
 ARG SCP_REPO=https://github.com/k4zmu2a/SpaceCadetPinball.git
 ARG SCP_COMMIT=cb9b7b886244a27773f66b0b19fdc2998392565e
