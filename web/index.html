@@ -37,7 +37,6 @@
     arguments: [],
     print: (t) => console.log(t),
     printErr: (t) => console.warn(t),
-    setStatus: (t) => { if (t) setStatus(t); },
     persistFs: () => FS.syncfs(false, (err) => { if (err) console.warn('syncfs', err); }),
     preRun: [() => {
       // Persistent prefs/high scores (SDL_GetPrefPath -> /libsdl/...) in IndexedDB.
