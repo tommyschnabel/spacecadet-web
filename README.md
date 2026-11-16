@@ -8,7 +8,7 @@ WebAssembly with Emscripten, and serves the result with nginx.
 
 ## Game data
 
-Not included (it's Microsoft's). Put the original files in `./gamedata/` — the
+Not included (it's Microsoft's, but easily findable if you check the right places). Put the original files in `./gamedata/` — the
 contents of the Windows `Pinball` folder (`PINBALL.DAT`, `*.WAV`, `PINBALL.MID`, ...)
 or Full Tilt's `CADET.DAT` + `SOUND/`. The browser fetches everything under `/data/`
 and loads it into the in-memory filesystem before the game starts.
