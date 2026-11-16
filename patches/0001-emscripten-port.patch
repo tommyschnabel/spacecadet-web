@@ -38,6 +38,18 @@ diff -ruN scp-a/CMakeLists.txt scp-b/CMakeLists.txt
  
  # On Windows, copy DLL to output
  if(WIN32)
+diff -ruN scp-a/SpaceCadetPinball/fullscrn.cpp scp-b/SpaceCadetPinball/fullscrn.cpp
+--- scp-a/SpaceCadetPinball/fullscrn.cpp	2026-11-16 10:18:36
++++ scp-b/SpaceCadetPinball/fullscrn.cpp	2026-11-16 11:30:24
+@@ -111,7 +111,7 @@
+ 	int width, height;
+ 	SDL_GetRendererOutputSize(winmain::Renderer, &width, &height);
+ 	int menuHeight = options::Options.ShowMenu ? winmain::MainMenuHeight : 0;
+-	height -= menuHeight;
++	height -= menuHeight + winmain::FooterHeight;
+ 	auto res = &resolution_array[resolution];
+ 	ScaleX = static_cast<float>(width) / res->TableWidth;
+ 	ScaleY = static_cast<float>(height) / res->TableHeight;
 diff -ruN scp-a/SpaceCadetPinball/midi.cpp scp-b/SpaceCadetPinball/midi.cpp
 --- scp-a/SpaceCadetPinball/midi.cpp	2026-11-16 10:18:36
 +++ scp-b/SpaceCadetPinball/midi.cpp	2026-11-16 10:31:36
@@ -266,7 +278,7 @@ diff -ruN scp-a/SpaceCadetPinball/translations.cpp scp-b/SpaceCadetPinball/trans
  	{
 diff -ruN scp-a/SpaceCadetPinball/winmain.cpp scp-b/SpaceCadetPinball/winmain.cpp
 --- scp-a/SpaceCadetPinball/winmain.cpp	2026-11-16 10:18:36
-+++ scp-b/SpaceCadetPinball/winmain.cpp	2026-11-16 11:00:37
++++ scp-b/SpaceCadetPinball/winmain.cpp	2026-11-16 11:30:24
 @@ -11,7 +11,12 @@
  #include "Sound.h"
  #include "translations.h"
@@ -280,7 +292,15 @@ diff -ruN scp-a/SpaceCadetPinball/winmain.cpp scp-b/SpaceCadetPinball/winmain.cp
  constexpr const char* winmain::Version;
  
  SDL_Window* winmain::MainWindow = nullptr;
-@@ -250,7 +255,12 @@
+@@ -43,6 +48,7 @@
+ bool winmain::HighScoresEnabled = true;
+ bool winmain::DemoActive = false;
+ int winmain::MainMenuHeight = 0;
++int winmain::FooterHeight = 0;
+ std::string winmain::FpsDetails, winmain::PrevSdlError;
+ unsigned winmain::PrevSdlErrorCount = 0;
+ double winmain::UpdateToFrameRatio;
+@@ -250,7 +256,12 @@
  			Options.FullScreen = true;
  		}
  
@@ -293,7 +313,7 @@ diff -ruN scp-a/SpaceCadetPinball/winmain.cpp scp-b/SpaceCadetPinball/winmain.cp
  		{
  			auto resInfo = &fullscrn::resolution_array[fullscrn::GetResolution()];
  			SDL_SetWindowSize(MainWindow, resInfo->TableWidth, resInfo->TableHeight);
-@@ -322,6 +332,26 @@
+@@ -322,6 +333,26 @@
  		if (!ProcessWindowMessages() || bQuit)
  			break;
  
@@ -320,7 +340,7 @@ diff -ruN scp-a/SpaceCadetPinball/winmain.cpp scp-b/SpaceCadetPinball/winmain.cp
  		if (has_focus)
  		{
  			if (mouse_down)
-@@ -422,6 +452,13 @@
+@@ -422,6 +453,13 @@
  			auto targetTimeDelta = TargetFrameTime - DurationMs(updateEnd - frameStart) - sleepRemainder;
  
  			TimePoint frameEnd;
@@ -334,7 +354,7 @@ diff -ruN scp-a/SpaceCadetPinball/winmain.cpp scp-b/SpaceCadetPinball/winmain.cp
  			if (targetTimeDelta > DurationMs::zero() && !Options.UncappedUpdatesPerSecond)
  			{
  				if (Options.HybridSleep)
-@@ -434,6 +471,7 @@
+@@ -434,6 +472,7 @@
  			{
  				frameEnd = updateEnd;
  			}
@@ -342,3 +362,90 @@ diff -ruN scp-a/SpaceCadetPinball/winmain.cpp scp-b/SpaceCadetPinball/winmain.cp
  
  			// Limit duration to 2 * target time
  			sleepRemainder = Clamp(DurationMs(frameEnd - updateEnd) - targetTimeDelta, -TargetFrameTime,
+@@ -470,6 +509,10 @@
+ 	ImGui::PopStyleVar(1);
+ 	ImGui::PopStyleColor(2);
+ 
++#ifdef __EMSCRIPTEN__
++	RenderControlsFooter();
++#endif
++
+ 	// No demo window in release to save space
+ #ifndef NDEBUG
+ 	if (ShowImGuiDemo)
+@@ -1113,6 +1156,12 @@
+ 					SDL_OpenURL("https://github.com/k4zmu2a/SpaceCadetPinball");
+ #endif
+ 				}
++				ImGui::Separator();
++				ImGui::TextUnformatted("Browser port (WebAssembly build + self-hosting)");
++				if (ImGui::SmallButton("Browser port: https://github.com/tommyschnabel/spacecadet-web"))
++				{
++					SDL_OpenURL("https://github.com/tommyschnabel/spacecadet-web");
++				}
+ 				ImGui::EndTabItem();
+ 			}
+ 			ImGui::PushStyleColor(ImGuiCol_Button, 0);
+@@ -1404,6 +1453,50 @@
+ 
+ 	// spin lock
+ 	for (auto start = Clock::now(); DurationMs(Clock::now() - start) < sleepTarget;);
++}
++
++// Browser port: bar along the bottom listing the current flipper/plunger keys,
++// in the same font and height as the menu bar. The table is scaled to fit above it.
++void winmain::RenderControlsFooter()
++{
++	const auto height = static_cast<int>(ImGui::GetFrameHeight());
++	if (FooterHeight != height)
++	{
++		FooterHeight = height;
++		fullscrn::window_size_changed();
++	}
++
++	std::string text;
++	for (auto binding : {GameBindings::LeftFlipper, GameBindings::RightFlipper, GameBindings::Plunger})
++	{
++		const auto& keyDef = Options.Key[~binding];
++		auto key = keyDef.GetShortcutDescription();
++		if (key.empty())
++			continue;
++		if (!text.empty())
++			text += "      ";
++		text += std::string(pb::get_rc_string(keyDef.Description)) + ": " + key;
++	}
++
++	const auto viewport = ImGui::GetMainViewport();
++	ImGui::SetNextWindowPos({viewport->Pos.x, viewport->Pos.y + viewport->Size.y - height});
++	ImGui::SetNextWindowSize({viewport->Size.x, static_cast<float>(height)});
++	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
++	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
++	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImGui::GetStyle().FramePadding);
++	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::GetStyleColorVec4(ImGuiCol_MenuBarBg));
++	if (ImGui::Begin("##ControlsFooter", nullptr,
++	                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoMove |
++	                 ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
++	                 ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNav))
++	{
++		const auto textWidth = ImGui::CalcTextSize(text.c_str()).x;
++		ImGui::SetCursorPosX(std::max(ImGui::GetStyle().FramePadding.x, (viewport->Size.x - textWidth) / 2));
++		ImGui::TextUnformatted(text.c_str());
++	}
++	ImGui::End();
++	ImGui::PopStyleColor();
++	ImGui::PopStyleVar(3);
+ }
+ 
+ void winmain::ImGuiMenuItemWShortcut(GameBindings binding, bool selected)
+diff -ruN scp-a/SpaceCadetPinball/winmain.h scp-b/SpaceCadetPinball/winmain.h
+--- scp-a/SpaceCadetPinball/winmain.h	2026-11-16 10:18:36
++++ scp-b/SpaceCadetPinball/winmain.h	2026-11-16 11:30:24
+@@ -75,6 +75,8 @@
+ 	static bool HighScoresEnabled;
+ 	static bool DemoActive;
+ 	static int MainMenuHeight;
++	static int FooterHeight;
++	static void RenderControlsFooter();
+ 
+ 	static int WinMain(LPCSTR lpCmdLine);
+ 	static int event_handler(const SDL_Event* event);

@@ -66,6 +66,9 @@ Defaults, rebindable under Options → Player Controls (C):
 | Player controls dialog | C |
 | Show / hide menu bar | B |
 
+The flipper and plunger keys are shown in a bar along the bottom of the page and
+follow any rebinding.
+
 Function keys are avoided since browsers grab most of them. Exit is unbound:
 quitting would just freeze the page.
 
@@ -87,7 +90,8 @@ Full Tilt's `.MDS` tracks are not rendered.
 - `winmain.cpp`: replace the blocking frame sleep with `emscripten_sleep` so the
   native main loop yields to the browser; flush high scores + sync IndexedDB every 5s;
   don't force the window to table size (the canvas fills the page, uniform scaling
-  keeps the aspect ratio).
+  keeps the aspect ratio); bottom bar with the flipper/plunger keys; link to this
+  repo in Help → About.
 
 Bump upstream by changing `SCP_COMMIT` in the Dockerfile; regenerate the patch if it
 stops applying.
