@@ -43,3 +43,11 @@ Full Tilt's `.MDS` tracks are not rendered.
 
 Bump upstream by changing `SCP_COMMIT` in the Dockerfile; regenerate the patch if it
 stops applying.
+
+## CI / updates
+
+- `.github/workflows/BuildImage.yml` — same as the other repos: build on every
+  push/PR; on GitHub, push `ghcr.io/<owner>/spacecadet-web` (`latest` + short sha)
+  for amd64 + arm64. The self-hosted runner builds amd64 only, no push.
+- `renovate.json` — base images plus a custom manager that tracks upstream's
+  `master` commit in `SCP_COMMIT`. A bump that breaks `patches/` fails the build.
