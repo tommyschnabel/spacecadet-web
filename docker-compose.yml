@@ -1,0 +1,11 @@
+services:
+  spacecadet:
+    build: .
+    image: spacecadet-web:latest
+    container_name: spacecadet
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      # Directory holding the original game files (PINBALL.DAT, *.WAV, PINBALL.MID, ...)
+      - ./gamedata:/data:ro

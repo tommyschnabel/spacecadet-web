@@ -1,0 +1,105 @@
+diff -ruN scp-a/CMakeLists.txt scp-b/CMakeLists.txt
+--- scp-a/CMakeLists.txt	2026-11-16 10:18:36
++++ scp-b/CMakeLists.txt	2026-11-16 10:18:59
+@@ -32,8 +32,16 @@
+ # SDL2main is not needed
+ set(SDL2_BUILDING_LIBRARY ON)
+ 
++if(EMSCRIPTEN)
++    # Browser build: SDL2 + SDL2_mixer come from Emscripten ports.
++    set(EM_PORT_FLAGS "-sUSE_SDL=2 -sUSE_SDL_MIXER=2")
++    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EM_PORT_FLAGS}")
++    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EM_PORT_FLAGS}")
++    set(CMAKE_EXECUTABLE_SUFFIX ".js")
++else()
+ find_package(SDL2 REQUIRED)
+ FIND_PACKAGE(SDL2_mixer REQUIRED)
++endif()
+ 
+ include_directories(${SDL2_INCLUDE_DIR} ${SDL2_MIXER_INCLUDE_DIR})
+ get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+@@ -217,6 +225,19 @@
+ endif()
+ 
+ target_link_libraries(SpaceCadetPinball ${SDL2_LIBRARY} ${SDL2_MIXER_LIBRARY})
++
++if(EMSCRIPTEN)
++    target_link_options(SpaceCadetPinball PRIVATE
++        -sUSE_SDL=2 -sUSE_SDL_MIXER=2
++        -sASYNCIFY -sASYNCIFY_STACK_SIZE=65536
++        -sALLOW_MEMORY_GROWTH=1
++        -sINITIAL_MEMORY=134217728
++        -sFORCE_FILESYSTEM=1
++        -sEXPORTED_RUNTIME_METHODS=FS,IDBFS,addRunDependency,removeRunDependency
++        -sENVIRONMENT=web
++        -lidbfs.js
++    )
++endif()
+ 
+ # On Windows, copy DLL to output
+ if(WIN32)
+diff -ruN scp-a/SpaceCadetPinball/winmain.cpp scp-b/SpaceCadetPinball/winmain.cpp
+--- scp-a/SpaceCadetPinball/winmain.cpp	2026-11-16 10:18:36
++++ scp-b/SpaceCadetPinball/winmain.cpp	2026-11-16 10:18:51
+@@ -11,7 +11,12 @@
+ #include "Sound.h"
+ #include "translations.h"
+ #include "font_selection.h"
++#include "high_score.h"
+ 
++#ifdef __EMSCRIPTEN__
++#include <emscripten.h>
++#endif
++
+ constexpr const char* winmain::Version;
+ 
+ SDL_Window* winmain::MainWindow = nullptr;
+@@ -322,6 +327,26 @@
+ 		if (!ProcessWindowMessages() || bQuit)
+ 			break;
+ 
++#ifdef __EMSCRIPTEN__
++		// Browser port: periodically flush high scores into the ini so they
++		// get persisted (IndexedDB sync happens on the JS side).
++		{
++			static auto lastPersist = Clock::now();
++			if (Clock::now() - lastPersist > DurationMs(5000))
++			{
++				lastPersist = Clock::now();
++				high_score::write();
++				EM_ASM({ if (Module.persistFs) Module.persistFs(); });
++			}
++		}
++		if (!has_focus)
++		{
++			// Unfocused: nothing below sleeps, yield to the browser.
++			emscripten_sleep(50);
++			continue;
++		}
++#endif
++
+ 		if (has_focus)
+ 		{
+ 			if (mouse_down)
+@@ -422,6 +447,13 @@
+ 			auto targetTimeDelta = TargetFrameTime - DurationMs(updateEnd - frameStart) - sleepRemainder;
+ 
+ 			TimePoint frameEnd;
++#ifdef __EMSCRIPTEN__
++			// Browser port: every iteration must yield to the event loop (ASYNCIFY).
++			emscripten_sleep(targetTimeDelta > DurationMs::zero() && !Options.UncappedUpdatesPerSecond
++				                 ? static_cast<unsigned>(targetTimeDelta.count())
++				                 : 0);
++			frameEnd = Clock::now();
++#else
+ 			if (targetTimeDelta > DurationMs::zero() && !Options.UncappedUpdatesPerSecond)
+ 			{
+ 				if (Options.HybridSleep)
+@@ -434,6 +466,7 @@
+ 			{
+ 				frameEnd = updateEnd;
+ 			}
++#endif
+ 
+ 			// Limit duration to 2 * target time
+ 			sleepRemainder = Clamp(DurationMs(frameEnd - updateEnd) - targetTimeDelta, -TargetFrameTime,

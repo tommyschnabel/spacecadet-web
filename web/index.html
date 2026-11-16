@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3D Pinball Space Cadet</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; color: #ccc; font-family: sans-serif; }
+  body { display: flex; align-items: center; justify-content: center; }
+  canvas { display: block; outline: none; image-rendering: pixelated; }
+  #status { position: fixed; top: 50%; left: 0; right: 0; text-align: center; white-space: pre-line; }
+</style>
+</head>
+<body>
+<canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+<div id="status">Loading…</div>
+<script>
+  const statusEl = document.getElementById('status');
+  const setStatus = (t) => { statusEl.textContent = t; statusEl.style.display = t ? '' : 'none'; };
+  const PREF_ROOT = '/libsdl';
+  const GAME_DIR = '/game';
+
+  // Recursively list /data/ using nginx's JSON autoindex.
+  async function listData(prefix) {
+    const res = await fetch('data/' + prefix, { cache: 'no-cache' });
+    if (!res.ok) throw new Error('GET data/' + prefix + ' -> ' + res.status);
+    let files = [];
+    for (const e of await res.json()) {
+      if (e.type === 'directory') files = files.concat(await listData(prefix + e.name + '/'));
+      else if (e.type === 'file') files.push(prefix + e.name);
+    }
+    return files;
+  }
+
+  var Module = {
+    canvas: document.getElementById('canvas'),
+    arguments: [],
+    print: (t) => console.log(t),
+    printErr: (t) => console.warn(t),
+    setStatus: (t) => { if (t) setStatus(t); },
+    persistFs: () => FS.syncfs(false, (err) => { if (err) console.warn('syncfs', err); }),
+    preRun: [() => {
+      // Persistent prefs/high scores (SDL_GetPrefPath -> /libsdl/...) in IndexedDB.
+      FS.mkdir(PREF_ROOT);
+      FS.mount(IDBFS, {}, PREF_ROOT);
+      addRunDependency('idbfs');
+      FS.syncfs(true, (err) => {
+        if (err) console.warn('idbfs load', err);
+        removeRunDependency('idbfs');
+      });
+
+      // Game data served from the mounted /data directory.
+      FS.mkdir(GAME_DIR);
+      FS.chdir(GAME_DIR);
+      addRunDependency('gamedata');
+      (async () => {
+        const files = await listData('');
+        if (!files.length) throw new Error('No game data found. Mount the original Space Cadet files at /data.');
+        let done = 0;
+        await Promise.all(files.map(async (f) => {
+          const r = await fetch('data/' + f.split('/').map(encodeURIComponent).join('/'));
+          if (!r.ok) throw new Error('GET ' + f + ' -> ' + r.status);
+          const buf = new Uint8Array(await r.arrayBuffer());
+          const parts = f.split('/');
+          let dir = GAME_DIR;
+          for (const p of parts.slice(0, -1)) {
+            dir += '/' + p;
+            try { FS.mkdir(dir); } catch (e) {}
+          }
+          FS.writeFile(GAME_DIR + '/' + f, buf);
+          setStatus('Loading game data… ' + (++done) + '/' + files.length);
+        }));
+        setStatus('');
+        removeRunDependency('gamedata');
+      })().catch((e) => setStatus('Error: ' + e.message));
+    }],
+  };
+  window.addEventListener('pagehide', () => { try { Module.persistFs(); } catch (e) {} });
+  window.addEventListener('mousedown', () => Module.canvas.focus());
+</script>
+<script async src="SpaceCadetPinball.js"></script>
+</body>
+</html>
