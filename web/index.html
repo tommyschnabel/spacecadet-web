@@ -21,13 +21,13 @@
   const GAME_DIR = '/game';
 
   // Recursively list /data/ using nginx's JSON autoindex.
-  async function listData(prefix) {
-    const res = await fetch('data/' + prefix, { cache: 'no-cache' });
-    if (!res.ok) throw new Error('GET data/' + prefix + ' -> ' + res.status);
+  async function listDir(root, prefix) {
+    const res = await fetch(root + prefix, { cache: 'no-cache' });
+    if (!res.ok) throw new Error('GET ' + root + prefix + ' -> ' + res.status);
     let files = [];
     for (const e of await res.json()) {
-      if (e.type === 'directory') files = files.concat(await listData(prefix + e.name + '/'));
-      else if (e.type === 'file') files.push(prefix + e.name);
+      if (e.type === 'directory') files = files.concat(await listDir(root, prefix + e.name + '/'));
+      else if (e.type === 'file') files.push({ root, path: prefix + e.name });
     }
     return files;
   }
@@ -53,12 +53,14 @@
       FS.chdir(GAME_DIR);
       addRunDependency('gamedata');
       (async () => {
-        const files = await listData('');
-        if (!files.length) throw new Error('No game data found. Mount the original Space Cadet files at /data.');
+        const data = await listDir('data/', '');
+        const music = await listDir('music/', '').catch(() => []);
+        const files = data.concat(music);
+        if (!data.length) throw new Error('No game data found. Mount the original Space Cadet files at /data.');
         let done = 0;
-        await Promise.all(files.map(async (f) => {
-          const r = await fetch('data/' + f.split('/').map(encodeURIComponent).join('/'));
-          if (!r.ok) throw new Error('GET ' + f + ' -> ' + r.status);
+        await Promise.all(files.map(async ({ root, path: f }) => {
+          const r = await fetch(root + f.split('/').map(encodeURIComponent).join('/'));
+          if (!r.ok) throw new Error('GET ' + root + f + ' -> ' + r.status);
           const buf = new Uint8Array(await r.arrayBuffer());
           const parts = f.split('/');
           let dir = GAME_DIR;

@@ -22,11 +22,22 @@ docker compose up -d --build
 
 Settings and high scores persist per-browser in IndexedDB.
 
+Music is off by default (as in the original): Options → Audio → Music, or F6.
+
+## Music
+
+The browser build of SDL_mixer has no MIDI synth, so on container start
+`render-music.sh` renders every `*.MID` under `/data` to Ogg Vorbis with
+fluidsynth + the TimGM6mb soundfont (into `/usr/share/nginx/html/music`, served at
+`/music/`). The patched game loads `PINBALL.OGG` before trying `PINBALL.MID`.
+Full Tilt's `.MDS` tracks are not rendered.
+
 ## Patches
 
 `patches/0001-emscripten-port.patch`:
 
 - CMake: use Emscripten's SDL2/SDL2_mixer ports, link with ASYNCIFY + IDBFS.
+- `midi.cpp` / `pch.h`: prefer the pre-rendered `.OGG` track; init Ogg instead of MIDI.
 - `winmain.cpp`: replace the blocking frame sleep with `emscripten_sleep` so the
   native main loop yields to the browser; flush high scores + sync IndexedDB every 5s.
 

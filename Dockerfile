@@ -23,6 +23,8 @@ RUN emcmake cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
  && cmake --build build -j"$(nproc)"
 
 FROM nginx:1.27.3-alpine
+RUN apk add --no-cache fluidsynth soundfont-timgm vorbis-tools
+COPY render-music.sh /docker-entrypoint.d/40-render-music.sh
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY web/ /usr/share/nginx/html/
 COPY --from=build /src/bin/SpaceCadetPinball.js /src/bin/SpaceCadetPinball.wasm /usr/share/nginx/html/
