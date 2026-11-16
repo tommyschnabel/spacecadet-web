@@ -67,17 +67,76 @@ diff -ruN scp-a/SpaceCadetPinball/midi.cpp scp-b/SpaceCadetPinball/midi.cpp
  
 diff -ruN scp-a/SpaceCadetPinball/options.cpp scp-b/SpaceCadetPinball/options.cpp
 --- scp-a/SpaceCadetPinball/options.cpp	2026-11-16 10:18:36
-+++ scp-b/SpaceCadetPinball/options.cpp	2026-11-16 11:00:37
-@@ -73,8 +73,8 @@
++++ scp-b/SpaceCadetPinball/options.cpp	2026-11-16 11:10:56
+@@ -66,58 +66,59 @@
+ 		{
+ 			"New Game",
+ 			Msg::Menu1_New_Game,
+-			{InputTypes::Keyboard, SDLK_F2},
++			{InputTypes::Keyboard, SDLK_n},
+ 			{},
+ 			{}
+ 		},
  		{
  			"Toggle Pause",
  			Msg::Menu1_Pause_Resume_Game,
-+			{InputTypes::Keyboard, SDLK_RETURN},
- 			{InputTypes::Keyboard, SDLK_F3},
--			{},
+-			{InputTypes::Keyboard, SDLK_F3},
++			{InputTypes::Keyboard, SDLK_p},
+ 			{},
  			{InputTypes::GameController, SDL_CONTROLLER_BUTTON_START}
  		},
  		{
+ 			"Toggle FullScreen",
+ 			Msg::Menu1_Full_Screen,
+-			{InputTypes::Keyboard, SDLK_F4},
++			{InputTypes::Keyboard, SDLK_f},
+ 			{},
+ 			{}
+ 		},
+ 		{
+ 			"Toggle Sounds",
+ 			Msg::Menu1_Sounds,
+-			{InputTypes::Keyboard, SDLK_F5},
++			{InputTypes::Keyboard, SDLK_e},
+ 			{},
+ 			{}
+ 		},
+ 		{
+ 			"Toggle Music",
+ 			Msg::Menu1_Music,
+-			{InputTypes::Keyboard, SDLK_F6},
++			{InputTypes::Keyboard, SDLK_m},
+ 			{},
+ 			{}
+ 		},
+ 		{
+ 			"Show Control Dialog",
+ 			Msg::Menu1_Player_Controls,
+-			{InputTypes::Keyboard, SDLK_F8},
++			{InputTypes::Keyboard, SDLK_c},
+ 			{},
+ 			{}
+ 		},
+ 		{
+ 			"Toggle Menu Display",
+ 			Msg::Menu1_ToggleShowMenu,
+-			{InputTypes::Keyboard, SDLK_F9},
++			{InputTypes::Keyboard, SDLK_b},
+ 			{},
+ 			{}
+ 		},
+ 		{
+ 			"Exit",
+ 			Msg::Menu1_Exit,
+-			{InputTypes::Keyboard, SDLK_ESCAPE},
++			// Browser port: exiting just freezes the page, so leave it unbound.
+ 			{},
+-			{InputTypes::GameController, SDL_CONTROLLER_BUTTON_BACK}
++			{},
++			{}
+ 		},
+ 	},
+ 	{"Sounds", true},
 diff -ruN scp-a/SpaceCadetPinball/pch.h scp-b/SpaceCadetPinball/pch.h
 --- scp-a/SpaceCadetPinball/pch.h	2026-11-16 10:18:36
 +++ scp-b/SpaceCadetPinball/pch.h	2026-11-16 10:33:53
@@ -94,7 +153,7 @@ diff -ruN scp-a/SpaceCadetPinball/pch.h scp-b/SpaceCadetPinball/pch.h
  	MIX_INIT_FLUIDSYNTH;
 diff -ruN scp-a/SpaceCadetPinball/translations.cpp scp-b/SpaceCadetPinball/translations.cpp
 --- scp-a/SpaceCadetPinball/translations.cpp	2026-11-16 10:18:36
-+++ scp-b/SpaceCadetPinball/translations.cpp	2026-11-16 11:03:51
++++ scp-b/SpaceCadetPinball/translations.cpp	2026-11-16 11:11:04
 @@ -737,30 +737,30 @@
  	{
  		Msg::STRING123,
@@ -123,30 +182,85 @@ diff -ruN scp-a/SpaceCadetPinball/translations.cpp scp-b/SpaceCadetPinball/trans
 -			{ Lang::Turkish, "Oyun Duraklatıldı\nDevam Etmek için F3'e basın" },
 -			{ Lang::SimplifiedChinese, "游戏暂停\nF3 继续" },
 -			{ Lang::TraditionalChinese, "遊戲暫停\n按 F3 恢復" },
-+			{ Lang::Arabic, "Game Paused\nEnter to Resume" },
-+			{ Lang::Czech, "Hra pozastavena. Pokračujte klávesou Enter." },
-+			{ Lang::Danish, "Spillet afbrudt\ntryk på Enter for at fortsætte" },
-+			{ Lang::German, "Spiel angehalten\nWeiter mit Enter." },
-+			{ Lang::Greek, "Η παρτίδα διακόπηκε\nEnter για συνέχιση" },
-+			{ Lang::English, "Game Paused\nPress Enter" },
-+			{ Lang::Spanish, "Juego pausado\nEnter para reanudar" },
-+			{ Lang::Finnish, "Peli keskeytetty\nPaina Enter" },
-+			{ Lang::French, "Partie suspendue\nEnter=Reprise" },
-+			{ Lang::Hebrew, "Game Paused\nEnter to Resume" },
-+			{ Lang::Hungarian, "Felfüggesztve\nEnter - folytatás" },
-+			{ Lang::Italian, "Partita interrotta\nEnter per riprendere" },
-+			{ Lang::Japanese, "ゲーム一時停止中\nEnter キーで再開" },
-+			{ Lang::Korean, "게임 일시 중지됨\n계속하려면 <Enter> 키" },
-+			{ Lang::Norwegian, "Pause\nEnter for å fortsette" },
-+			{ Lang::Dutch, "Spel is onderbroken\nEnter hervat het spel" },
-+			{ Lang::Polish, "Gra wstrzymana.\nEnter wznawia grę." },
-+			{ Lang::BrazilianPortuguese, "Jogo em pausa\nEnter para continuar" },
-+			{ Lang::Portuguese, "Jogo suspenso\nEnter para continuar" },
-+			{ Lang::Russian, "Игра приостановлена\nНажмите Enter, чтобы продолжить" },
-+			{ Lang::Swedish, "Paus\nEnter=Fortsätt" },
-+			{ Lang::Turkish, "Oyun Duraklatıldı\nDevam Etmek için Enter'e basın" },
-+			{ Lang::SimplifiedChinese, "游戏暂停\nEnter 继续" },
-+			{ Lang::TraditionalChinese, "遊戲暫停\n按 Enter 恢復" },
++			{ Lang::Arabic, "Game Paused\nP to Resume" },
++			{ Lang::Czech, "Hra pozastavena. Pokračujte klávesou P." },
++			{ Lang::Danish, "Spillet afbrudt\ntryk på P for at fortsætte" },
++			{ Lang::German, "Spiel angehalten\nWeiter mit P." },
++			{ Lang::Greek, "Η παρτίδα διακόπηκε\nP για συνέχιση" },
++			{ Lang::English, "Game Paused\nP to Resume" },
++			{ Lang::Spanish, "Juego pausado\nP para reanudar" },
++			{ Lang::Finnish, "Peli keskeytetty\nPaina P" },
++			{ Lang::French, "Partie suspendue\nP=Reprise" },
++			{ Lang::Hebrew, "Game Paused\nP to Resume" },
++			{ Lang::Hungarian, "Felfüggesztve\nP - folytatás" },
++			{ Lang::Italian, "Partita interrotta\nP per riprendere" },
++			{ Lang::Japanese, "ゲーム一時停止中\nP キーで再開" },
++			{ Lang::Korean, "게임 일시 중지됨\n계속하려면 <P> 키" },
++			{ Lang::Norwegian, "Pause\nP for å fortsette" },
++			{ Lang::Dutch, "Spel is onderbroken\nP hervat het spel" },
++			{ Lang::Polish, "Gra wstrzymana.\nP wznawia grę." },
++			{ Lang::BrazilianPortuguese, "Jogo em pausa\nP para continuar" },
++			{ Lang::Portuguese, "Jogo suspenso\nP para continuar" },
++			{ Lang::Russian, "Игра приостановлена\nНажмите P, чтобы продолжить" },
++			{ Lang::Swedish, "Paus\nP=Fortsätt" },
++			{ Lang::Turkish, "Oyun Duraklatıldı\nDevam Etmek için P'e basın" },
++			{ Lang::SimplifiedChinese, "游戏暂停\nP 继续" },
++			{ Lang::TraditionalChinese, "遊戲暫停\n按 P 恢復" },
+ 		},
+ 	},
+ 	{
+@@ -795,30 +795,30 @@
+ 	{
+ 		Msg::STRING125,
+ 		{
+-			{ Lang::Arabic, "F2 Starts New Game" },
+-			{ Lang::Czech, "Stisknutím klávesy F2 zahájíte novou hru." },
+-			{ Lang::Danish, "F2 starter nyt spil" },
+-			{ Lang::German, "F2: Neues Spiel starten" },
+-			{ Lang::Greek, "F2 για να ξεκινήσετε μια νέα παρτίδα" },
+-			{ Lang::English, "F2 Starts New Game" },
+-			{ Lang::Spanish, "F2 inicia un nuevo juego" },
+-			{ Lang::Finnish, "F2: Uusi peli" },
+-			{ Lang::French, "F2 Nouvelle partie" },
+-			{ Lang::Hebrew, "F2 Starts New Game" },
+-			{ Lang::Hungarian, "F2 új játékot kezd" },
+-			{ Lang::Italian, "F2 per iniziare una nuova partita" },
+-			{ Lang::Japanese, "F2 キーで新ゲーム開始" },
+-			{ Lang::Korean, "<F2> 키로 새 게임 시작" },
+-			{ Lang::Norwegian, "F2 starter et nytt spill" },
+-			{ Lang::Dutch, "F2 start een nieuw spel" },
+-			{ Lang::Polish, "F2 rozpoczyna nową grę." },
+-			{ Lang::BrazilianPortuguese, "F2 começa um novo jogo" },
+-			{ Lang::Portuguese, "F2 inicia um novo jogo" },
+-			{ Lang::Russian, "Нажмите F2, чтобы начать новую игру" },
+-			{ Lang::Swedish, "F2=Nytt spel" },
+-			{ Lang::Turkish, "F2 Yeni Oyun Başlatır" },
+-			{ Lang::SimplifiedChinese, "F2 开局" },
+-			{ Lang::TraditionalChinese, "F2 開始新遊戲" },
++			{ Lang::Arabic, "N Starts New Game" },
++			{ Lang::Czech, "Stisknutím klávesy N zahájíte novou hru." },
++			{ Lang::Danish, "N starter nyt spil" },
++			{ Lang::German, "N: Neues Spiel starten" },
++			{ Lang::Greek, "N για να ξεκινήσετε μια νέα παρτίδα" },
++			{ Lang::English, "N Starts New Game" },
++			{ Lang::Spanish, "N inicia un nuevo juego" },
++			{ Lang::Finnish, "N: Uusi peli" },
++			{ Lang::French, "N Nouvelle partie" },
++			{ Lang::Hebrew, "N Starts New Game" },
++			{ Lang::Hungarian, "N új játékot kezd" },
++			{ Lang::Italian, "N per iniziare una nuova partita" },
++			{ Lang::Japanese, "N キーで新ゲーム開始" },
++			{ Lang::Korean, "<N> 키로 새 게임 시작" },
++			{ Lang::Norwegian, "N starter et nytt spill" },
++			{ Lang::Dutch, "N start een nieuw spel" },
++			{ Lang::Polish, "N rozpoczyna nową grę." },
++			{ Lang::BrazilianPortuguese, "N começa um novo jogo" },
++			{ Lang::Portuguese, "N inicia um novo jogo" },
++			{ Lang::Russian, "Нажмите N, чтобы начать новую игру" },
++			{ Lang::Swedish, "N=Nytt spel" },
++			{ Lang::Turkish, "N Yeni Oyun Başlatır" },
++			{ Lang::SimplifiedChinese, "N 开局" },
++			{ Lang::TraditionalChinese, "N 開始新遊戲" },
  		},
  	},
  	{
